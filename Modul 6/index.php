@@ -1,3 +1,5 @@
+<?php include "koneksi.php"; ?> 
+
 <!DOCTYPE html>
 <html>
 <head>
@@ -34,54 +36,83 @@ Foto :
 
 <h2>Daftar Mahasiswa</h2>
 
-<?php
+<h3>Cari Mahasiswa</h3> 
+<form method="GET">
+<input type="text" name="cari" placeholder="Cari nama..." value="<?= $_GET['cari'] ?? '' ?>">
 
-$file = "data/mahasiswa.json";
+<select name="sort">
+    <option value="">-- Urutkan --</option>
+    <option value="asc" <?= ($_GET['sort'] ?? '') == 'asc' ? 'selected' : '' ?>>A-Z</option>
+    <option value="desc" <?= ($_GET['sort'] ?? '') == 'desc' ? 'selected' : '' ?>>Z-A</option>
+</select>
 
-if(file_exists($file)){
+<button type="submit">Terapkan</button>
+<a href="index.php">Reset</a>
+</form>
+<br>
 
-$data = json_decode(file_get_contents($file), true);
-
-echo "<table border='1' cellpadding='10'>";
-
-echo "<tr>
+<table border="1" cellpadding="10">
+<tr>
 <th>No</th>
 <th>Foto</th>
 <th>Nama</th>
 <th>NIM</th>
 <th>Jurusan</th>
 <th>Aksi</th>
-</tr>";
+</tr>
+
+<?php
+
+# Ambil parameter cari dan sort
+$cari = $_GET['cari'] ?? '';
+$sort = $_GET['sort'] ?? '';
+
+// Amankan input
+$cari = mysqli_real_escape_string($conn, $cari);
+
+$query = "SELECT * FROM mahasiswa";
+
+// SEARCH
+if($cari){
+    $query .= " WHERE nama LIKE '%$cari%'";
+}
+
+// SORT
+if($sort == "asc"){
+    $query .= " ORDER BY nama ASC";
+}elseif($sort == "desc"){
+    $query .= " ORDER BY nama DESC";
+}
+
+// EKSEKUSI
+$data = mysqli_query($conn, $query);
+
+// DEBUG
+if(!$data){
+    die("Query Error: " . mysqli_error($conn));
+}
 
 $no = 1;
 
-foreach($data as $index => $mhs){
-
-echo "<tr>";
-
-echo "<td>".$no++."</td>";
-
-echo "<td><img src='uploads/".$mhs['foto']."' width='80'></td>";
-
-echo "<td>".$mhs['nama']."</td>";
-
-echo "<td>".$mhs['nim']."</td>";
-
-echo "<td>".$mhs['jurusan']."</td>";
-
-echo "<td>
-<a href='hapus.php?id=".$index."'>Hapus</a>
-</td>";
-
-echo "</tr>";
-
-}
-
-echo "</table>";
-
-}
-
+// LOOP DATA
+while($mhs = mysqli_fetch_assoc($data)){
 ?>
+
+<tr>
+<td><?= $no++ ?></td>
+<td><img src="uploads/<?= $mhs['foto'] ?>" width="80"></td>
+<td><?= $mhs['nama'] ?></td>
+<td><?= $mhs['nim'] ?></td>
+<td><?= $mhs['jurusan'] ?></td>
+<td>
+<a href="hapus.php?id=<?= $mhs['id'] ?>">Hapus</a> |
+<a href="edit.php?id=<?= $mhs['id'] ?>">Edit</a>
+</td>
+</tr>
+
+<?php } ?>
+
+</table>
 
 </body>
 </html>
